@@ -88,7 +88,14 @@ class Botijo:
 				
 				# server ping pong
 				if (line[0] == "PING"):
-					s.send("PONG %s\r\n" % line[1])	
+					s.send("PONG %s\r\n" % line[1])
+
+				# server codes
+				elif (line[1] == "433"): # :server.domain 433 * botijo :Nickname is already in use.
+					s.close()
+					print "Nickname is already in use"
+					sys.exit()
+
 				# private messages
 				elif (line[1] == "PRIVMSG"):
 					user = line[0].split("!")
