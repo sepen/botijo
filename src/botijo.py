@@ -19,6 +19,7 @@ class Botijo:
 		self.verbose = 0
 		self.home = "~/.botijo"
 		self.mods = "log", "sysinfo", "notes"
+		self.admins = ""
 		self.host, self.port, self.channel = host, port, channel
 		self.nick, self.ident, self.realname = nick, nick, nick
 		
@@ -28,6 +29,7 @@ class Botijo:
 			self.verbose = conf.get("config", "verbose")
 			self.home = conf.get("config", "home")
 			self.mods = conf.get("config", "mods")
+			self.admins = conf.get("config", "admins")
 			self.host = conf.get("config", "host")
 			self.port = conf.get("config", "port")
 			self.channel = conf.get("config", "channel")
@@ -116,7 +118,10 @@ class Botijo:
 								mod_sysinfo = sysinfo.Sysinfo()
 								response = mod_sysinfo.getresponse(petition)
 							elif (mod == "notes"):
-								response = notes.doCommand(petition)
+								if user in self.admins:
+									response = notes.doCommand(petition)
+								else:
+									response = "you are not authorized to use this module"
 							else:
 								response = "module '" + mod + "' not implemented"
 						else:
