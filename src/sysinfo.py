@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
 import os
-#import decimal
 
 class Sysinfo:
 	
-	uname = None
+	debug = None
 
 	def __init__ (self):
 
-		self.uname = " ".join(os.uname())
+		self.debug = 0
 					
 	def getresponse (self, text):
 
@@ -18,7 +17,7 @@ class Sysinfo:
 		arg = t[1:]
 
 		if (cmd == "uname"):
-			return self.uname
+			output = " ".join(os.uname())
 
 		elif (cmd == "free"):
 			# mem
@@ -56,9 +55,9 @@ class Sysinfo:
 			output = output + "Swap " + swap[3] + "/" + swap[1] + "M (" + swap_percent + "%), "
 			output = output + "Total " + total[3] + "/" + total[1] + "M (" + total_percent + "%)"
 
-			return output
-
-		else: return "'" + cmd + "' is not available"
+		else:
+			output = "'" + cmd + "' is not available"
 		
+		return output
 
 # End of file

@@ -10,12 +10,14 @@ import ConfigParser
 
 class Botijo:
 	
-	verbose, home, mods = None, None, None
+	debug, verbose = None, None
+	home, mods = None, None
 	host, port, channel = None, None, None
 	nick, ident, realname = None, None, None
 		
 	def __init__ (self, verbose, config, host, port, channel, nick):
-		
+
+		self.debug = 0
 		self.verbose = 0
 		self.home = "~/.botijo"
 		self.mods = "log", "sysinfo", "notes"
@@ -47,7 +49,7 @@ class Botijo:
 
 	def main(self):
 		
-		if (self.verbose):
+		if (self.verbose == 1):
 			print ">>> Connecting to server " + self.host + " on port " + str(self.port)
 			print ">>> Using nickname " + self.nick + " on channel " + self.channel
 		
@@ -81,7 +83,7 @@ class Botijo:
 			
 			for line in temp:
 				
-				if (self.verbose): print line
+				if (self.debug == 1): print line
 				
 				line = string.rstrip(line)
 				line = string.split(line)
@@ -142,7 +144,7 @@ class Botijo:
 						if (sendto != user):
 							response = user + ": " + response
 						s.send("PRIVMSG %s :%s\r\n" % (sendto, response))
-						if (self.verbose):
+						if (self.verbose == 1):
 							print ">>> PRIVMSG " + sendto + " :" + response
 					
 					if "log" in self.mods:
