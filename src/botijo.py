@@ -118,8 +118,10 @@ class Botijo:
 						mod = tmp[0].lstrip("!")
 						petition = " ".join(tmp[1:])
 					
-					if len(petition) > 0:
-						if mod in self.mods:
+					if mod in self.mods:
+						if (mod == "log"):
+							response = "module '" + mod + "' not available for users"
+						elif len(petition) > 0:
 							if (mod == "sysinfo"):
 								import sysinfo
 								mod_sysinfo = sysinfo.Sysinfo()
@@ -132,11 +134,13 @@ class Botijo:
 							else:
 								response = "module '" + mod + "' not implemented"
 						else:
-							response = "unknown module '" + mod + "'"
+							response = "module '" + mod + "' requires more arguments to be passed"
 					else:
-						if not mod in self.mods: response = "unknown module '" + mod + "'"
+						response = "unknown module '" + mod + "'"
 					
 					if (sendto is not "") and (response is not ""):
+						if (sendto != user):
+							response = user + ": " + response
 						s.send("PRIVMSG %s :%s\r\n" % (sendto, response))
 						if (self.verbose):
 							print ">>> PRIVMSG " + sendto + " :" + response
