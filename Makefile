@@ -18,6 +18,7 @@ src/botijo: src/botijo.sh
 	@sed -e "s|PYTHON=.*|PYTHON=$(PYTHON)|" \
 	     -e "s|PREFIX=.*|PREFIX=$(PREFIX)|" \
 	     src/botijo.sh > src/botijo
+	@chmod +x src/botijo
 
 install: all
 	@install -d $(DESTDIR)/$(PREFIX)/{bin,lib/botijo}
