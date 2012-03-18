@@ -18,7 +18,7 @@ class Botijo:
 		
 		self.verbose = 0
 		self.home = "~/.botijo"
-		self.mods = "log", "sysinfo"
+		self.mods = "log", "sysinfo", "notes"
 		self.host, self.port, self.channel = host, port, channel
 		self.nick, self.ident, self.realname = nick, nick, nick
 		
@@ -57,12 +57,20 @@ class Botijo:
 		s.send("JOIN %s\r\n" % self.channel)
 	
 		if "log" in self.mods:
-				import log
-				log = log.Log(self.home + "/log/" + self.channel)
-				if not os.access(self.home + "/log", os.F_OK | os.W_OK):
-					os.mkdir(self.home + "/log")  # create prefs directory
-				if not os.access(self.home + "/log/" + self.channel, os.F_OK | os.W_OK):
-					os.mkdir(self.home + "/log/" + self.channel)  # create prefs directory
+			import log
+			log = log.Log(self.home + "/log/" + self.channel)
+			if not os.access(self.home + "/log", os.F_OK | os.W_OK):
+				os.mkdir(self.home + "/log")  # create prefs directory
+			if not os.access(self.home + "/log/" + self.channel, os.F_OK | os.W_OK):
+				os.mkdir(self.home + "/log/" + self.channel)  # create prefs directory
+
+		if "notes" in self.mods:
+			import notes
+			notes = notes.Notes(self.home + "/notes/" + self.channel)
+			if not os.access(self.home + "/notes", os.F_OK | os.W_OK):
+				os.mkdir(self.home + "/notes")  # create prefs directory
+			if not os.access(self.home + "/notes/" + self.channel, os.F_OK | os.W_OK):
+				os.mkdir(self.home + "/notes/" + self.channel)  # create prefs directory
 
 		while 1:
 			readbuffer = readbuffer + s.recv(1024)
@@ -107,6 +115,8 @@ class Botijo:
 								import sysinfo
 								mod_sysinfo = sysinfo.Sysinfo()
 								response = mod_sysinfo.getresponse(petition)
+							elif (mod == "notes"):
+								response = notes.doCommand(petition)
 							else:
 								response = "module '" + mod + "' not implemented"
 						else:
