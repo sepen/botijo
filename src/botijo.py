@@ -20,7 +20,7 @@ class Botijo:
 		self.debug = 0
 		self.verbose = 0
 		self.home = "~/.botijo"
-		self.mods = "log", "sysinfo", "notes"
+		self.mods = "log, sysinfo, notes"
 		self.admins = ""
 		self.host, self.port, self.channel = host, port, channel
 		self.nick, self.ident, self.realname = nick, nick, nick
@@ -52,14 +52,18 @@ class Botijo:
 		if (self.verbose == 1):
 			print ">>> Connecting to server " + self.host + " on port " + str(self.port)
 			print ">>> Using nickname " + self.nick + " on channel " + self.channel
-		
+
+		# connect to a server
 		readbuffer = ""
 		s = socket.socket( )
 		s.connect((self.host, self.port))
+		# validate user
 		s.send("NICK %s\r\n" % self.nick)
 		s.send("USER %s %s * :%s\r\n" % (self.ident, self.host, self.realname))
+		# join to channel
 		s.send("JOIN %s\r\n" % self.channel)
-	
+
+		# some modules require an extra initialization
 		if "log" in self.mods:
 			import log
 			log = log.Log(self.home + "/log/" + self.channel)
@@ -76,15 +80,19 @@ class Botijo:
 			if not os.access(self.home + "/notes/" + self.channel, os.F_OK | os.W_OK):
 				os.mkdir(self.home + "/notes/" + self.channel)  # create prefs directory
 
+		# main loop
 		while 1:
+			# read buffer from server
 			readbuffer = readbuffer + s.recv(1024)
 			temp = string.split(readbuffer, "\n")
 			readbuffer = temp.pop( )
-			
+
+			# process every line
 			for line in temp:
 				
 				if (self.debug == 1): print line
-				
+
+				# get sanitized string
 				line = string.rstrip(line)
 				line = string.split(line)
 				
@@ -109,44 +117,49 @@ class Botijo:
 					mod = ""
 					
 					tmp = text.split()
-					# user to bot
+					# PRIVMSG from user to bot
 					if (line[2] == self.nick):
 						sendto = user
 						mod = tmp[0]
 						petition = " ".join(tmp[1:])
-					# user to channel
+					# PRIVMSG from user to channel
 					elif (line[2] == self.channel) and (text[0] == "!"):
 						sendto = self.channel
 						mod = tmp[0].lstrip("!")
 						petition = " ".join(tmp[1:])
-					
+
+					# search and execute then module petition
 					if mod in self.mods:
-						if (mod == "log"):
+						if (mod == 'log'):
 							response = "module '" + mod + "' not available for users"
 						elif len(petition) > 0:
+							cmd = petition[0]
+							args = petition[1:]
 							if (mod == "sysinfo"):
 								import sysinfo
 								mod_sysinfo = sysinfo.Sysinfo()
-								response = mod_sysinfo.getresponse(petition)
+								response = mod_sysinfo.doCommand(cmd, args)
 							elif (mod == "notes"):
 								if user in self.admins:
-									response = notes.doCommand(petition)
+									response = notes.doCommand(cmd, args)
 								else:
 									response = "you are not authorized to use this module"
 							else:
-								response = "module '" + mod + "' not implemented"
+								response = "available modules are: " + self.mods
 						else:
 							response = "module '" + mod + "' requires more arguments to be passed"
 					else:
-						response = "unknown module '" + mod + "'"
-					
+						response = "available modules are: " + self.mods
+
+					#  return the response with a prefix depending on PRIVMSG origin
 					if (sendto is not "") and (response is not ""):
 						if (sendto != user):
 							response = user + ": " + response
 						s.send("PRIVMSG %s :%s\r\n" % (sendto, response))
 						if (self.verbose == 1):
 							print ">>> PRIVMSG " + sendto + " :" + response
-					
+
+					# save last line if log module is selected
 					if "log" in self.mods:
 						log.write(user, text)
 
@@ -170,9 +183,9 @@ def usage() :
 if __name__ == "__main__":
 	
 	verbose = 0
-	host, port = "irc.dyndns.org", 6667
-	channel, nick = "#botijo", "botijo"
-	config = "~/.botijo.conf"
+	host, port = 'irc.freenode.net', 6667
+	channel, nick = '#botijo', 'botijo'
+	config = '~/.botijo.conf'
 
 	for opt in sys.argv[1:]:
 

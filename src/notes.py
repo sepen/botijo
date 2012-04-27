@@ -5,27 +5,34 @@ class Notes:
 	dir = "."
 	
 	def __init__ (self, dir):
+
 		self.dir = dir
+
+	def msgUsage (self):
+
+		return "available commands for notes module are: help, add"
 		
-	def doCommand (self, text):
-		t = text.split()
-		cmd = t[0]
+	def doCommand (self, cmd, args):
+
 		if (cmd == "help"):
-			return "available commands: help, add"
+			self.msgUsage()
+
 		elif (cmd == "add"):
-			if (len(t) > 2):
-				filename = t[1]
-				note = t[2:]
+			if (len(args) > 1):
+				filename = args[0]
+				note = args[1:]
 				file = self.dir + "/" + filename
 				f = open(file, "a")
 				f.write(" ".join(note) + "\n")
 				f.close()
 				return "added to " + filename
 			else:
-				return "you must give filename and text args to this command"
+				self.msgUsage()
+
 		#elif (cmd == "ls"):
 		#	TODO: print a list of notes
+
 		else:
-			return "'" + cmd + "' is not available, use 'notes help' to get a list"
+			self.msgUsage()
 
 # End of file

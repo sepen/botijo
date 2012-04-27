@@ -9,15 +9,18 @@ class Sysinfo:
 	def __init__ (self):
 
 		self.debug = 0
+
+	def msgUsage():
+
+		return "available commands for sysinfo module are: help, uname, free"
 					
-	def getresponse (self, text):
+	def doCommand (self, cmd, args):
 
-		t = text.split()
-		cmd = t[0]
-		arg = t[1:]
+		if (cmd == "help"):
+			self.msgUsage()
 
-		if (cmd == "uname"):
-			output = " ".join(os.uname())
+		elif (cmd == "uname"):
+			return " ".join(os.uname())
 
 		elif (cmd == "free"):
 			# mem
@@ -28,7 +31,6 @@ class Sysinfo:
 			mem_percent_tmp = float(mem[3]) / float(mem[1])
 			mem_percent = str(float(mem_percent_tmp)*100)
 			mem_percent = mem_percent[:2]
-
 			# swap
 			pipe_swap = os.popen('{ free -tom | grep ^Swap; } 2>&1', 'r')
 			line_swap = pipe_swap.read()
@@ -40,7 +42,6 @@ class Sysinfo:
 				swap_percent_tmp = float(swap[3]) / float(swap[1])
 				swap_percent = str(float(swap_percent_tmp)*100)
 				swap_percent = swap_percent[:2]
-
 			# total
 			pipe_total = os.popen('{ free -tom | grep ^Total; } 2>&1', 'r')
 			line_total = pipe_total.read()
@@ -49,15 +50,10 @@ class Sysinfo:
 			total_percent_tmp = float(total[3]) / float(total[1])
 			total_percent = str(float(total_percent_tmp)*100)
 			total_percent = total_percent[:2]
-
 			# output
 			output = "Mem " + mem[3] + "/" + mem[1] + "M (" + mem_percent + "%), "
 			output = output + "Swap " + swap[3] + "/" + swap[1] + "M (" + swap_percent + "%), "
 			output = output + "Total " + total[3] + "/" + total[1] + "M (" + total_percent + "%)"
-
-		else:
-			output = "'" + cmd + "' is not available"
-		
-		return output
+			return output
 
 # End of file
