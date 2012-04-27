@@ -128,7 +128,7 @@ class Botijo:
 						mod = tmp[0].lstrip("!")
 						petition = " ".join(tmp[1:])
 
-					# search and execute then module petition
+					# search and execute the module petition
 					if mod in self.mods:
 						if (mod == 'log'):
 							response = "module '" + mod + "' not available for users"
@@ -159,7 +159,7 @@ class Botijo:
 						if (self.verbose == 1):
 							print ">>> PRIVMSG " + sendto + " :" + response
 
-					# save last line if log module is selected
+					# save last line if log module is enabled
 					if "log" in self.mods:
 						log.write(user, text)
 
