@@ -4,25 +4,21 @@ class Notes:
 
 	dir = "."
 	
-	def __init__ (self, dir):
+	def __init__ (self, basedir):
 
-		self.dir = dir
+		self.basedir = basedir
 
-	def msgUsage (self):
-
-		return "available commands for notes module are: help, add"
-		
 	def doCommand (self, cmd, args):
 
 		if (cmd == "help"):
-			self.msgUsage()
+			return "available commands for notes module are: help, add"
 
 		elif (cmd == "add"):
 			if (len(args) > 1):
 				filename = args[0]
 				note = args[1:]
-				file = self.dir + "/" + filename
-				f = open(file, "a")
+				notefile = self.basedir + "/" + filename
+				f = open(notefile, "a")
 				f.write(" ".join(note) + "\n")
 				f.close()
 				return "added to " + filename

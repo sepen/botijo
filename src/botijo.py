@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -tt
 #
 # botijo: IRC Bot written in python with modules suppot
 
@@ -15,14 +15,14 @@ class Botijo:
 	host, port, channel = None, None, None
 	nick, ident, realname = None, None, None
 		
-	def __init__ (self, verbose, config, host, port, channel, nick):
+	def __init__ (self, verbose, config, host, port, channels, nick):
 
 		self.debug = 0
-		self.verbose = 0
+		self.verbose = verbose
 		self.home = "~/.botijo"
 		self.mods = "log, sysinfo, notes"
 		self.admins = ""
-		self.host, self.port, self.channel = host, port, channel
+		self.host, self.port, self.channels = host, port, channels
 		self.nick, self.ident, self.realname = nick, nick, nick
 		
 		if os.path.exists(config):
@@ -34,7 +34,7 @@ class Botijo:
 			self.admins = conf.get("config", "admins")
 			self.host = conf.get("config", "host")
 			self.port = conf.get("config", "port")
-			self.channel = conf.get("config", "channel")
+			self.channels = conf.get("config", "channels")
 			self.nick = conf.get("config", "nick")
 		
 		self.home = self.home.strip('"')
@@ -43,54 +43,58 @@ class Botijo:
 			os.mkdir(self.home)  # create prefs directory
 		self.host = self.host.strip('"')
 		self.port = int(self.port)
-		self.channel = self.channel.strip('"')
 		self.nick = self.nick.strip('"')
-	
+		self.registered = False
+		self.inChannels = {}
+		for channel in self.channels:
+			self.inChannels[channel] = False
 
 	def main(self):
 		
 		if (self.verbose == 1):
-			print ">>> Connecting to server " + self.host + " on port " + str(self.port)
-			print ">>> Using nickname " + self.nick + " on channel " + self.channel
+			print "==> Connecting to server " + self.host + " on port " + str(self.port)
 
 		# connect to a server
-		readbuffer = ""
-		s = socket.socket( )
-		s.connect((self.host, self.port))
-		# validate user
-		s.send("NICK %s\r\n" % self.nick)
-		s.send("USER %s %s * :%s\r\n" % (self.ident, self.host, self.realname))
-		# join to channel
-		s.send("JOIN %s\r\n" % self.channel)
+		self.readbuffer = ""
+		self.socket = socket.socket( )
+		self.socket.connect((self.host, self.port))
+
+		# register user
+		if (self.verbose == 1):
+			print "==> Registering nick/user information"
+		self.socket.send("NICK %s\r\n" % self.nick)
+		self.socket.send("USER %s %s * :%s\r\n" % (self.ident, self.host, self.realname))
 
 		# some modules require an extra initialization
 		if "log" in self.mods:
 			import log
-			log = log.Log(self.home + "/log/" + self.channel)
+			log = log.Log(self.home + "/log")
 			if not os.access(self.home + "/log", os.F_OK | os.W_OK):
 				os.mkdir(self.home + "/log")  # create prefs directory
-			if not os.access(self.home + "/log/" + self.channel, os.F_OK | os.W_OK):
-				os.mkdir(self.home + "/log/" + self.channel)  # create prefs directory
 
 		if "notes" in self.mods:
 			import notes
-			notes = notes.Notes(self.home + "/notes/" + self.channel)
+			notes = notes.Notes(self.home + "/notes")
 			if not os.access(self.home + "/notes", os.F_OK | os.W_OK):
 				os.mkdir(self.home + "/notes")  # create prefs directory
-			if not os.access(self.home + "/notes/" + self.channel, os.F_OK | os.W_OK):
-				os.mkdir(self.home + "/notes/" + self.channel)  # create prefs directory
 
 		# main loop
 		while 1:
+			# join to channels
+			if self.registered:
+				for channel in self.channels:
+					if not self.inChannels[channel]:
+						self.socket.send("JOIN %s\r\n" % channel)
+
 			# read buffer from server
-			readbuffer = readbuffer + s.recv(1024)
-			temp = string.split(readbuffer, "\n")
-			readbuffer = temp.pop( )
+			self.readbuffer = self.readbuffer + self.socket.recv(1024)
+			data = self.readbuffer.split("\n")
+			self.readbuffer = data.pop( )
 
 			# process every line
-			for line in temp:
+			for line in data:
 				
-				if (self.debug == 1): print line
+				if (self.debug == 1): print "[DEBUG] " + line
 
 				# get sanitized string
 				line = string.rstrip(line)
@@ -98,43 +102,59 @@ class Botijo:
 				
 				# server ping pong
 				if (line[0] == "PING"):
-					s.send("PONG %s\r\n" % line[1])
+					self.socket.send("PONG %s\r\n" % line[1])
 
-				# server codes
+				# 433 Nickname is already in use
 				elif (line[1] == "433"): # :server.domain 433 * botijo :Nickname is already in use.
-					s.close()
-					print "Nickname is already in use"
+					self.socket.close()
+					if (self.verbose == 1):
+						print "==> Nickname is already in use."
 					sys.exit()
+
+				# 376 End of MOTD
+				if line[1] == '376':
+					if (self.verbose == 1):
+						print "==> Successfully registered with nickname: %s." % self.nick
+					self.registered = True
+
+				# 366 End of /NAMES list
+				if line[1] == '366':
+					if (self.verbose == 1):
+						print "==> Successfully joined channel: %s." % line[3]
+					self.inChannels[line[3]] = True
 
 				# private messages
 				elif (line[1] == "PRIVMSG"):
-					user = line[0].split("!")
-					user = user[0].lstrip(":")
-					text = " ".join(line[3:]).lstrip(":")
+					user = line[0].lstrip(":")
+					nick = line[0].split("!")[0].lstrip(":")
+					msg = " ".join(line[3:]).lstrip(":")
+					tmp = msg.split(" ")
 					sendto = ""
 					petition = ""
 					response = ""
 					mod = ""
-					
-					tmp = text.split()
+
 					# PRIVMSG from user to bot
 					if (line[2] == self.nick):
-						sendto = user
+						sendto = nick
 						mod = tmp[0]
 						petition = " ".join(tmp[1:])
+
 					# PRIVMSG from user to channel
-					elif (line[2] == self.channel) and (text[0] == "!"):
-						sendto = self.channel
-						mod = tmp[0].lstrip("!")
-						petition = " ".join(tmp[1:])
+					elif (line[2] in self.inChannels):
+						if (msg[0] == "!"):
+							sendto = line[2]
+							mod = tmp[0].lstrip("!")
+							petition = " ".join(tmp[1:])
 
 					# search and execute the module petition
 					if mod in self.mods:
 						if (mod == 'log'):
 							response = "module '" + mod + "' not available for users"
 						elif len(petition) > 0:
-							cmd = petition[0]
-							args = petition[1:]
+							tmp = petition.split(" ")
+							cmd = tmp[0]
+							args = " ".join(tmp[1:])
 							if (mod == "sysinfo"):
 								import sysinfo
 								mod_sysinfo = sysinfo.Sysinfo()
@@ -153,30 +173,36 @@ class Botijo:
 
 					#  return the response with a prefix depending on PRIVMSG origin
 					if (sendto is not "") and (response is not ""):
-						if (sendto != user):
-							response = user + ": " + response
-						s.send("PRIVMSG %s :%s\r\n" % (sendto, response))
+						if (sendto != nick):
+							response = nick + ": " + response
+						self.socket.send("PRIVMSG %s :%s\r\n" % (sendto, response))
 						if (self.verbose == 1):
-							print ">>> PRIVMSG " + sendto + " :" + response
+							print "==> PRIVMSG " + sendto + " :" + response
 
-					# save last line if log module is enabled
-					if "log" in self.mods:
-						log.write(user, text)
+						# save last line if log module is enabled
+						if "log" in self.mods:
+							log.write(nick, msg, sendto)
 
+				# debug not managed command codes from server
+				else:
+					if (self.debug == 1):
+						print "[DEBUG] NOT MATCHED LINE"
 
+def version():
+	print "botijo 0.2 by Jose V Beneyto, <sepen@crux.nu>"
+	sys.exit()
 
-def usage() :
-
-	print "botijo 0.1 by Jose V Beneyto, <sepen@crux.nu>"
+def usage():
 	print "Usage: botijo <options>"
 	print "Where options are:"
-	print " -h, --help         Show this help information"
-	print " -v, --verbose      Print verbose messages"
-	print " --conf=CONFIG      Use a config file"
-	print " --host=SERVER      IRC server to connect"
-	print " --port=PORT        Port number of the server to connect"
-	print " --channel=CHANNEL  Name for the server channel"
-	print " --nick=NICK        Nick name you want to use"
+	print " -h, --help           Show this help information"
+	print " -V, --version        Show version information"
+	print " -v, --verbose        Print verbose messages"
+	print " --conf=CONFIG        Use alternate config file"
+	print " --host=SERVER        IRC server to connect"
+	print " --port=PORT          Port number of the server to connect"
+	print " --channels=CHANNELS  List of channels to join (separated by commas)"
+	print " --nick=NICK          Nick name you want to use"
 	sys.exit()
 
 
@@ -184,13 +210,16 @@ if __name__ == "__main__":
 	
 	verbose = 0
 	host, port = 'irc.freenode.net', 6667
-	channel, nick = '#botijo', 'botijo'
+	channels = '#botijotest1', '#botijotest2'
+	nick = 'botijo'
 	config = '~/.botijo.conf'
 
 	for opt in sys.argv[1:]:
 
 		if opt in ("-h", "--help"):
 			usage()
+		elif opt in ("-V", "--version"):
+			version()
 		elif opt in ("-v", "--verbose"):
 			verbose = 1
 		elif "=" in opt:
@@ -201,16 +230,16 @@ if __name__ == "__main__":
 				host = val
 			elif (key == "--port"):
 				port = int(val)
-			elif (key == "--channel"):
-				channel = val
+			elif (key == "--channels"):
+				channels = val.split(",")
 			elif (key == "--nick"):
 				nick = val
 			else:
 				usage()
 		else:
 			usage()
-		
-	bot = Botijo(verbose, config, host, port, channel, nick)
+
+	bot = Botijo(verbose, config, host, port, channels, nick)
 	bot.main()
 
 # End of file

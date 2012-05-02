@@ -1,20 +1,23 @@
 #!/usr/bin/env python
 
-import datetime
+import os, datetime
 
 class Log:
 
 	dir = "."
 	
-	def __init__ (self, dir):
-		self.dir = dir
+	def __init__ (self, basedir):
+		self.basedir = basedir
 		
-	def write (self, user, text):
+	def write (self, user, text, channel):
 		dt = datetime.datetime.now()
 		(date, time) = str(dt).split()
 		(time, prec) = time.split(".")
-		file = self.dir + "/" + date
-		f = open(file, "a")
+		logdir = self.basedir + "/" + channel
+		if not os.access(logdir, os.F_OK | os.W_OK):
+			os.mkdir(logdir)
+		logfile = logdir + "/" + date
+		f = open(logfile, "a")
 		f.write("%s [%s] %s\n" % (time, user, text))
 		f.close()
 

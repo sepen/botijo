@@ -10,14 +10,10 @@ class Sysinfo:
 
 		self.debug = 0
 
-	def msgUsage():
-
-		return "available commands for sysinfo module are: help, uname, free"
-					
-	def doCommand (self, cmd, args):
+	def doCommand (self, cmd, args = ""):
 
 		if (cmd == "help"):
-			self.msgUsage()
+			return "available commands for sysinfo module are: help, uname, free"
 
 		elif (cmd == "uname"):
 			return " ".join(os.uname())
