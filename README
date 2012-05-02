@@ -1,0 +1,41 @@
+
+
+              botijo: IRC bot written in Python with modules support
+
+
+REQUERIMENTS
+
+  Python (http://www.python.org)
+
+
+BUILD AND INSTALL
+
+  $ make
+  $ sudo make install
+  or
+  $ sudo make install DESTDIR=/path/to/dir
+
+
+USAGE
+
+  botijo <options>
+
+  Where options are:
+  -h, --help           Show this help information
+  -V, --version        Show version information
+  -v, --verbose        Print verbose messages
+  --conf=CONFIG        Use alternate config file
+  --host=SERVER        IRC server to connect
+  --port=PORT          Port number of the server to connect
+  --channels=CHANNELS  List of channels to join (separated by commas)
+  --nick=NICK          Nick name you want to use
+
+
+EXAMPLES
+
+  $ botijo --channels=#testchannel,#mychannel --nick=mybot
+
+
+BUGS AND REPORTS
+
+  Please contact to me: Jose V Beneyto, <sepen@crux.nu>
