@@ -1,11 +1,9 @@
 #!/bin/sh
 
 PYTHON=/usr/bin/python
+LIBDIR=/usr/lib/botijo
 
-PREFIX=/usr
-
-cd $PREFIX/lib/botijo
+cd $LIBDIR
 $PYTHON botijo.pyc "$@"
-cd -
 
 # End of file

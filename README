@@ -10,10 +10,23 @@ REQUERIMENTS
 
 BUILD AND INSTALL
 
-  $ make
+  default install:
   $ sudo make install
-  or
-  $ sudo make install DESTDIR=/path/to/dir
+
+  customized installations, for example:
+  $ sudo make install PREFIX=/opt
+
+  the example above will generate this tree:
+
+  /opt/
+   ├── bin
+   │   └── botijo
+   └── lib
+       └── botijo
+           ├── botijo.pyc
+           ├── log.pyc
+           ├── notes.pyc
+           └── sysinfo.pyc
 
 
 USAGE

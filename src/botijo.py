@@ -11,23 +11,26 @@ import ConfigParser
 class Botijo:
 	
 	debug, verbose = None, None
+	config = None
 	home, mods = None, None
-	host, port, channel = None, None, None
+	host, port, channels = None, None, None
 	nick, ident, realname = None, None, None
 		
 	def __init__ (self, verbose, config, host, port, channels, nick):
 
-		self.debug = 0
+		self.debug = 0  # 0 disabled, 1/2/3 enabled
 		self.verbose = verbose
+		self.config = config.strip('"')
+		self.config = os.path.expanduser(self.config)
 		self.home = "~/.botijo"
 		self.mods = "log, sysinfo, notes"
 		self.admins = ""
 		self.host, self.port, self.channels = host, port, channels
 		self.nick, self.ident, self.realname = nick, nick, nick
 		
-		if os.path.exists(config):
+		if os.path.exists(self.config):
 			conf = ConfigParser.ConfigParser()
-			conf.readfp(file(config))
+			conf.readfp(file(self.config))
 			self.verbose = conf.get("config", "verbose")
 			self.home = conf.get("config", "home")
 			self.mods = conf.get("config", "mods")
@@ -36,17 +39,23 @@ class Botijo:
 			self.port = conf.get("config", "port")
 			self.channels = conf.get("config", "channels")
 			self.nick = conf.get("config", "nick")
-		
+			if (self.debug >= 1):
+				print "[DEBUG] config file loaded: " + self.config
+
 		self.home = self.home.strip('"')
 		self.home = os.path.expanduser(self.home)
 		if not os.access(self.home, os.F_OK | os.W_OK):
 			os.mkdir(self.home)  # create prefs directory
 		self.host = self.host.strip('"')
 		self.port = int(self.port)
+		self.channels = self.channels.strip('"')
+		self.channels = self.channels.split(",")
 		self.nick = self.nick.strip('"')
 		self.registered = False
 		self.inChannels = {}
 		for channel in self.channels:
+			if (self.debug >= 1):
+				print "[DEBUG] channel: " + channel
 			self.inChannels[channel] = False
 
 	def main(self):
@@ -68,9 +77,7 @@ class Botijo:
 		# some modules require an extra initialization
 		if "log" in self.mods:
 			import log
-			log = log.Log(self.home + "/log")
-			if not os.access(self.home + "/log", os.F_OK | os.W_OK):
-				os.mkdir(self.home + "/log")  # create prefs directory
+			log = log.Log(self.config)
 
 		if "notes" in self.mods:
 			import notes
@@ -94,7 +101,7 @@ class Botijo:
 			# process every line
 			for line in data:
 				
-				if (self.debug == 1): print "[DEBUG] " + line
+				if (self.debug >= 2): print "[DEBUG] " + line
 
 				# get sanitized string
 				line = string.rstrip(line)
@@ -142,8 +149,8 @@ class Botijo:
 
 					# PRIVMSG from user to channel
 					elif (line[2] in self.inChannels):
+						sendto = line[2]
 						if (msg[0] == "!"):
-							sendto = line[2]
 							mod = tmp[0].lstrip("!")
 							petition = " ".join(tmp[1:])
 
@@ -151,7 +158,7 @@ class Botijo:
 					if mod in self.mods:
 						if (mod == 'log'):
 							response = "module '" + mod + "' not available for users"
-						elif len(petition) > 0:
+						elif (len(petition) > 0):
 							tmp = petition.split(" ")
 							cmd = tmp[0]
 							args = " ".join(tmp[1:])
@@ -166,7 +173,7 @@ class Botijo:
 									response = "you are not authorized to use this module"
 							else:
 								response = "available modules are: " + self.mods
-						else:
+						elif (mod is not  ""):
 							response = "module '" + mod + "' requires more arguments to be passed"
 					else:
 						response = "available modules are: " + self.mods
@@ -179,13 +186,15 @@ class Botijo:
 						if (self.verbose == 1):
 							print "==> PRIVMSG " + sendto + " :" + response
 
-						# save last line if log module is enabled
-						if "log" in self.mods:
-							log.write(nick, msg, sendto)
+					# save last line if log module is enabled
+					if "log" in self.mods:
+						if (self.debug >= 1):
+							print "[DEBUG] log.write(" + nick + ", " + msg + ", " + sendto + ")"
+						log.write(nick, msg, sendto)
 
 				# debug not managed command codes from server
 				else:
-					if (self.debug == 1):
+					if (self.debug >= 3):
 						print "[DEBUG] NOT MATCHED LINE"
 
 def version():

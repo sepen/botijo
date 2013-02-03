@@ -5,7 +5,9 @@
 PYTHON=/usr/bin/python
 
 DESTDIR=
+
 PREFIX=/usr
+LIBDIR=$(PREFIX)/lib/botijo
 
 .PHONY: all install clean
 
@@ -16,14 +18,15 @@ src/botijo.pyc: src/botijo.py
 
 src/botijo: src/botijo.sh
 	@sed -e "s|PYTHON=.*|PYTHON=$(PYTHON)|" \
-	     -e "s|PREFIX=.*|PREFIX=$(PREFIX)|" \
+	     -e "s|LIBDIR=.*|LIBDIR=$(LIBDIR)|" \
 	     src/botijo.sh > src/botijo
 	@chmod +x src/botijo
 
 install: all
-	@install -d $(DESTDIR)/$(PREFIX)/{bin,lib/botijo}
+	@install -d -m 0755 $(DESTDIR)/$(PREFIX)/bin
 	@install -m 0755 src/botijo $(DESTDIR)/$(PREFIX)/bin
-	@install -m 0644 src/*.pyc $(DESTDIR)/$(PREFIX)/lib/botijo
+	@install -d -m 0755 $(DESTDIR)/$(LIBDIR)
+	@install -m 0644 src/*.pyc $(DESTDIR)/$(LIBDIR)
 
 clean:
 	@rm -f src/*.pyc src/botijo
