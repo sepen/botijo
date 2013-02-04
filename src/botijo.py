@@ -31,14 +31,14 @@ class Botijo:
 		if os.path.exists(self.config):
 			conf = ConfigParser.ConfigParser()
 			conf.readfp(file(self.config))
-			self.verbose = conf.get("config", "verbose")
-			self.home = conf.get("config", "home")
-			self.mods = conf.get("config", "mods")
-			self.admins = conf.get("config", "admins")
-			self.host = conf.get("config", "host")
-			self.port = conf.get("config", "port")
-			self.channels = conf.get("config", "channels")
-			self.nick = conf.get("config", "nick")
+			self.verbose = conf.get("botijo", "verbose")
+			self.home = conf.get("botijo", "home")
+			self.mods = conf.get("botijo", "mods")
+			self.admins = conf.get("botijo", "admins")
+			self.host = conf.get("botijo", "host")
+			self.port = conf.get("botijo", "port")
+			self.channels = conf.get("botijo", "channels")
+			self.nick = conf.get("botijo", "nick")
 			if (self.debug >= 1):
 				print "[DEBUG] config file loaded: " + self.config
 

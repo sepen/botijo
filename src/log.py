@@ -14,8 +14,8 @@ class Log:
 		if os.path.exists(config):
 			conf = ConfigParser.ConfigParser()
 			conf.readfp(file(config))
-			self.logdir = conf.get("log", "logdir")
-			self.logtype = conf.get("log", "logtype")
+			self.logdir = conf.get("module log", "logdir")
+			self.logtype = conf.get("module log", "logtype")
 		# check for logdir
 		self.logdir = self.logdir.strip('"')
 		self.logdir = os.path.expanduser(self.logdir)
@@ -24,9 +24,7 @@ class Log:
 		# check for logtype
 		if (self.logtype == "sqlite"):
 			import sqlite3 as lite
-			self.bbddcon = lite.connect(self.logdir + '/irclog.db')
-			with self.bbddcon:
-				self.bbddcur = self.bbddcon.cursor()
+			self.bbddconn = lite.connect(self.logdir + '/log.db')
 
 	def write (self, nick, message, channel):
 		dt = datetime.datetime.now()
@@ -47,8 +45,11 @@ class Log:
 		f.close()
 
 	def write_sqlite (self, date, time, nick, message, channel):
-		# TODO: check if we need to create a new table
-		#self.bbddcur.execute("CREATE TABLE '" + channel + "' (date TEXT, time TEXT, user TEXT, message TEXT)")
-		self.bbddcur.execute("INSERT INTO '" + channel + "' VALUES('" + date + "','" + time +"','" + nick + "','" + message + "')")
+		print channel + " - " + date + " [" + nick + "] " + message
+		with self.bbddconn:
+			cur = self.bbddconn.cursor()
+			cur.execute("CREATE TABLE IF NOT EXISTS '" + channel + "' (date TEXT, time TEXT, nick TEXT, message TEXT)")
+			cur.execute("INSERT INTO '" + channel + "' VALUES('" + date + "','" + time +"','" + nick + "','" + message + "')")
+			self.bbddconn.commit()
 
 # End of file
