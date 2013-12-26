@@ -5,17 +5,16 @@ import ConfigParser
 
 class Log:
 
-	# default values
-	logdir = "~/.botijo/logs"
-	logtype = "text"
-	
+	config = None
+	logdir, logtype = None, None
+
 	def __init__ (self, config):
-		# read from config file
-		if os.path.exists(config):
-			conf = ConfigParser.ConfigParser()
-			conf.readfp(file(config))
-			self.logdir = conf.get("module log", "logdir")
-			self.logtype = conf.get("module log", "logtype")
+
+		self.config = config
+
+		self.logdir = config.get("module log", "logdir")
+		self.logtype = config.get("module log", "logtype")
+
 		# check for logdir
 		self.logdir = self.logdir.strip('"')
 		self.logdir = os.path.expanduser(self.logdir)
@@ -24,7 +23,7 @@ class Log:
 		# check for logtype
 		if (self.logtype == "sqlite"):
 			import sqlite3 as lite
-			self.bbddconn = lite.connect(self.logdir + '/log.db')
+			self.bbddconn = lite.connect(self.logdir + '/logs.db')
 
 	def write (self, nick, message, channel):
 		dt = datetime.datetime.now()
