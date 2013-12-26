@@ -1,6 +1,6 @@
 
 
-              botijo: IRC bot written in Python with modules support
+        botijo: IRC bot written in Python with modules support
 
 
 REQUERIMENTS
@@ -40,13 +40,14 @@ USAGE
   --conf=CONFIG        Use alternate config file
   --host=SERVER        IRC server to connect
   --port=PORT          Port number of the server to connect
-  --channels=CHANNELS  List of channels to join (separated by commas)
+  --channels=CHANNELS  List of channels to join (separated by spaces)
+  --mods=MODS          List of modules to enable (separated by commans)
   --nick=NICK          Nick name you want to use
 
 
 EXAMPLES
 
-  $ botijo --channels=#testchannel,#mychannel --nick=mybot
+  $ botijo --channels="#testchannel #mychannel" --nick=mybot
 
 
 BUGS AND REPORTS
