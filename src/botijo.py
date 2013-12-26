@@ -9,54 +9,41 @@ import string
 import ConfigParser
 
 class Botijo:
-	
-	debug, verbose = None, None
+
 	config = None
-	home, mods = None, None
+	debug, verbose = None, None
+	home, mods, admins = None, None, None
 	host, port, channels = None, None, None
 	nick, ident, realname = None, None, None
-		
-	def __init__ (self, verbose, config, host, port, channels, nick):
 
-		self.debug = 0  # 0 disabled, 1/2/3 enabled
-		self.verbose = verbose
-		self.config = config.strip('"')
-		self.config = os.path.expanduser(self.config)
-		self.home = "~/.botijo"
-		self.mods = "log, sysinfo, notes"
-		self.admins = ""
+	def __init__ (self, config, debug, verbose, home, mods, admins, host, port, channels, nick):
+
+		self.config = config
+		self.debug, self.verbose = debug, verbose
+		self.home, self.mods, self.admins = home, mods, admins
 		self.host, self.port, self.channels = host, port, channels
 		self.nick, self.ident, self.realname = nick, nick, nick
-		
-		if os.path.exists(self.config):
-			conf = ConfigParser.ConfigParser()
-			conf.readfp(file(self.config))
-			self.verbose = conf.get("botijo", "verbose")
-			self.home = conf.get("botijo", "home")
-			self.mods = conf.get("botijo", "mods")
-			self.admins = conf.get("botijo", "admins")
-			self.host = conf.get("botijo", "host")
-			self.port = conf.get("botijo", "port")
-			self.channels = conf.get("botijo", "channels")
-			self.nick = conf.get("botijo", "nick")
-			if (self.debug >= 1):
-				print "[DEBUG] config file loaded: " + self.config
 
+		# sanitize vars
 		self.home = self.home.strip('"')
 		self.home = os.path.expanduser(self.home)
 		if not os.access(self.home, os.F_OK | os.W_OK):
 			os.mkdir(self.home)  # create prefs directory
+		self.mods = self.mods.strip('"')
+		self.mods = self.mods.split(" ")
+		self.admins = self.admins.strip('"')
+		self.admins = self.admins.split(" ")
 		self.host = self.host.strip('"')
 		self.port = int(self.port)
 		self.channels = self.channels.strip('"')
-		self.channels = self.channels.split(",")
-		self.nick = self.nick.strip('"')
-		self.registered = False
+		self.channels = self.channels.split(" ")
 		self.inChannels = {}
 		for channel in self.channels:
 			if (self.debug >= 1):
 				print "[DEBUG] channel: " + channel
 			self.inChannels[channel] = False
+		self.nick = self.nick.strip('"')
+		self.registered = False
 
 	def main(self):
 		
@@ -154,29 +141,33 @@ class Botijo:
 							mod = tmp[0].lstrip("!")
 							petition = " ".join(tmp[1:])
 
+					# print some debug messages
+					if (self.debug >= 2):
+						print "[DEBUG] available mods: " + " ".join(self.mods)
+						print "[DEBUG] sendto: " + sendto
+						print "[DEBUG] mod: " + mod
+						print "[DEBUG] petition: " + petition
+
 					# search and execute the module petition
-					if mod in self.mods:
-						if (mod == 'log'):
-							response = "module '" + mod + "' not available for users"
-						elif (len(petition) > 0):
-							tmp = petition.split(" ")
-							cmd = tmp[0]
-							args = " ".join(tmp[1:])
-							if (mod == "sysinfo"):
-								import sysinfo
-								mod_sysinfo = sysinfo.Sysinfo()
-								response = mod_sysinfo.doCommand(cmd, args)
-							elif (mod == "notes"):
-								if user in self.admins:
-									response = notes.doCommand(cmd, args)
-								else:
-									response = "you are not authorized to use this module"
+					if (len(mod) > 0):
+						if mod in self.mods:
+							if (len(petition) > 0):
+								tmp = petition.split(" ")
+								cmd = tmp[0]
+								args = " ".join(tmp[1:])
+								if (mod == "sysinfo"):
+									import sysinfo
+									mod_sysinfo = sysinfo.Sysinfo()
+									response = mod_sysinfo.doCommand(cmd, args)
+								elif (mod == "notes"):
+									if user in self.admins:
+										response = notes.doCommand(cmd, args)
+									else:
+										response = "you are not authorized to use this module"
 							else:
-								response = "available modules are: " + self.mods
-						elif (mod is not  ""):
-							response = "module '" + mod + "' requires more arguments to be passed"
-					else:
-						response = "available modules are: " + self.mods
+								response = "module '" + mod + "' requires more arguments to be passed"
+						else:
+							response = mod + " is not available, modules are: " + " ".join(self.mods)
 
 					#  return the response with a prefix depending on PRIVMSG origin
 					if (sendto is not "") and (response is not ""):
@@ -210,18 +201,23 @@ def usage():
 	print " --conf=CONFIG        Use alternate config file"
 	print " --host=SERVER        IRC server to connect"
 	print " --port=PORT          Port number of the server to connect"
-	print " --channels=CHANNELS  List of channels to join (separated by commas)"
+	print " --channels=CHANNELS  List of channels to join (separated by spaces)"
+	print " --mods=MODS          List of modules to enable (separated by spaces)"
 	print " --nick=NICK          Nick name you want to use"
+	print "Example:"
+	print "  botijo -v --host='localhost' --channels='test1 test2' --nick='foo'"
 	sys.exit()
 
 
 if __name__ == "__main__":
-	
+
+	debug = 0  # 0 disabled, 1/2/3 enabled
 	verbose = 0
 	host, port = 'irc.freenode.net', 6667
-	channels = '#botijotest1', '#botijotest2'
+	channels = '#botijotest1' '#botijotest2'
+	mods = 'log' 'sysinfo' 'notes'
 	nick = 'botijo'
-	config = '~/.botijo.conf'
+	config_file = '~/.botijo.conf'
 
 	for opt in sys.argv[1:]:
 
@@ -234,13 +230,15 @@ if __name__ == "__main__":
 		elif "=" in opt:
 			(key, val) = (opt.split("="))
 			if (key == "--conf"):
-				config = val
+				config_file = val
 			elif (key == "--host"):
 				host = val
 			elif (key == "--port"):
 				port = int(val)
 			elif (key == "--channels"):
-				channels = val.split(",")
+				channels = val.split(" ")
+			elif (key == "--mods"):
+				channels = val.split(" ")
 			elif (key == "--nick"):
 				nick = val
 			else:
@@ -248,7 +246,43 @@ if __name__ == "__main__":
 		else:
 			usage()
 
-	bot = Botijo(verbose, config, host, port, channels, nick)
+	# load config
+	config_file = config_file.strip('"')
+	config_file = os.path.expanduser(config_file)
+	config = ConfigParser.ConfigParser()
+
+	if os.path.exists(config_file):
+		# read config file
+		config.readfp(file(config_file))
+		verbose = config.get("botijo", "verbose")
+		debug = config.get("botijo", "debug")
+		home = config.get("botijo", "home")
+		mods = config.get("botijo", "mods")
+		admins = config.get("botijo", "admins")
+		host = config.get("botijo", "host")
+		port = config.get("botijo", "port")
+		channels = config.get("botijo", "channels")
+		nick = config.get("botijo", "nick")
+		if (debug >= 1):
+			print "[DEBUG] config file loaded: " + config_file
+	else:
+		# write config file
+		config_stream = open(config_file, 'r+')
+		config.read_file(config_stream)
+		config.add_section("botijo")
+		config.set("botijo", "verbose", verbose)
+		config.set("botijo", "debug", debug)
+		config.set("botijo", "home", home)
+		config.set("botijo", "mods", mods)
+		config.set("botijo", "admins", admins)
+		config.set("botijo", "host", hosts)
+		config.set("botijo", "port", port)
+		config.set("botijo", "channels", channels)
+		config.set("botijo", "nick", nick)
+		config.add_section("module log")
+		config.write(config_stream)
+
+	bot = Botijo(config, debug, verbose, home, mods, admins, host, port, channels, nick)
 	bot.main()
 
 # End of file
