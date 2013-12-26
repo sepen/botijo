@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# /etc/rc.d/botijo: start/stop the botijo daemon
+#
+
+PYTHON="{PYTHON}"
+BOTIJO_LIBRARY_PATH="{PREFIX}/lib/botijo"
+RUN_AS_USER="botijo"
+CONFIG_FILE="{PREFIX}/etc/botijo.conf"
+PID_FILE="/var/run/botijo.pid"
+
+case $1 in
+start)
+	/bin/touch $PID_FILE
+	/bin/chown botijo $PID_FILE
+        /usr/bin/su $RUN_AS_USER \
+	-c "$PYTHON $BOTIJO_LIBRARY_PATH/botijo.pyc --conf=$CONFIG_FILE" &
+        ;;
+stop)
+	kill `cat $PID_FILE`
+        rm -f $PID_FILE
+        ;;
+restart)
+        $0 stop
+        sleep 2
+        $0 start
+        ;;
+*)
+        echo "usage: $0 [start|stop|restart]"
+        ;;
+esac
+
+# End of file
