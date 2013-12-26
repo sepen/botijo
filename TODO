@@ -1,0 +1,35 @@
+[ general ]
+
+fix inherit values for config variables
+- values are hardcoded in botijo.py (or <module>.py for each module)
+- botijo.conf can overlay them but should inherit the others
+- command line args can overlay them and also should inherit de others
+
+toggle visibility for some modules
+- for example for syslog module it would be fine to have a config
+  variable like this:
+  visibility = public (or private) 
+
+use alternate pidfile from config variables
+- pidfile is hardcoded to /var/run/botijo.pid and we must be able to use
+  an alternate one
+
+improve modules initialization to be homogeneous
+- all modules enabled should be initialized before the main loop 
+
+admin privileges from modules ?
+- some modules like 'notes' may require admin privileges and ATM these
+  checks are from the main botijo.py and should be done in every module
+- when create instances of modules we can pass the user and the list of admins
+
+
+[ module log ]
+
+avoid logging for modules petitions or use a config variable to select this
+- something like '!sysinfo uname' must not be logged
+- response for '!sysinfo uname' also must not be logged
+
+add more log formats instead of having only the logtype variable:
+- logtext   = 1 # default
+- loghtml   = 0
+- logsqlite = 0
