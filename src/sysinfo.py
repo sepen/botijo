@@ -13,7 +13,7 @@ class Sysinfo:
 	def doCommand (self, cmd, args = ""):
 
 		if (cmd == "help"):
-			return "available commands for sysinfo module are: help, uname, free"
+			return "available commands for sysinfo module are: help uname free"
 
 		elif (cmd == "uname"):
 			return " ".join(os.uname())

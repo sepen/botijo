@@ -11,7 +11,7 @@ class Notes:
 	def doCommand (self, cmd, args):
 
 		if (cmd == "help"):
-			return "available commands for notes module are: help, add"
+			return "available commands for notes module are: help add"
 
 		elif (cmd == "add"):
 			if (len(args) > 1):

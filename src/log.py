@@ -12,8 +12,8 @@ class Log:
 
 		self.config = config
 
-		self.logdir = config.get("module log", "logdir")
-		self.logtype = config.get("module log", "logtype")
+		self.logdir = config.get("mod log", "logdir")
+		self.logtype = config.get("mod log", "logtype")
 
 		# check for logdir
 		self.logdir = self.logdir.strip('"')
