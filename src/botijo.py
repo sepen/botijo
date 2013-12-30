@@ -143,7 +143,7 @@ class Botijo:
 
 					# print some debug messages
 					if (self.debug >= 2):
-						print "[DEBUG] available mods: " + " ".join(self.mods)
+						print "[DEBUG] mods: " + " ".join(self.mods)
 						print "[DEBUG] sendto: " + sendto
 						print "[DEBUG] mod: " + mod
 						print "[DEBUG] petition: " + petition
@@ -166,8 +166,6 @@ class Botijo:
 										response = "you are not authorized to use this module"
 							else:
 								response = "module '" + mod + "' requires more arguments to be passed"
-						else:
-							response = mod + " is not available, modules are: " + " ".join(self.mods)
 
 					#  return the response with a prefix depending on PRIVMSG origin
 					if (sendto is not "") and (response is not ""):
@@ -198,47 +196,86 @@ def usage():
 	print " -h, --help           Show this help information"
 	print " -V, --version        Show version information"
 	print " -v, --verbose        Print verbose messages"
-	print " --conf=CONFIG        Use alternate config file"
+	print " --conf=CONFIG        Use alternate config file (default: ~/.botijo.conf)"
 	print " --host=SERVER        IRC server to connect"
 	print " --port=PORT          Port number of the server to connect"
 	print " --channels=CHANNELS  List of channels to join (separated by spaces)"
-	print " --mods=MODS          List of modules to enable (separated by spaces)"
 	print " --nick=NICK          Nick name you want to use"
 	print "Example:"
-	print "  botijo -v --host='localhost' --channels='test1 test2' --nick='foo'"
+	print "  botijo --host=localhost --channels='#test1 #test2' --nick=foo"
 	sys.exit()
 
 
 if __name__ == "__main__":
 
-	debug = 0  # 0 disabled, 1/2/3 enabled
-	verbose = 0
-	host, port = 'irc.freenode.net', 6667
-	channels = '#botijotest1' '#botijotest2'
-	mods = 'log' 'sysinfo' 'notes'
-	nick = 'botijo'
-	config_file = '~/.botijo.conf'
+	debug = 0 # disabled: 0, enabled: 1, 2 or 3
 
+	# check for 'show functions'
 	for opt in sys.argv[1:]:
-
 		if opt in ("-h", "--help"):
 			usage()
 		elif opt in ("-V", "--version"):
 			version()
-		elif opt in ("-v", "--verbose"):
+
+	# default values in config variables
+	verbose = 0
+	conf = '~/.botijo.conf'
+	home = '~/.botijo'
+	mods = ''
+	admins = ''
+	host = 'localhost'
+	port = 6667
+	channels = '#botijo'
+	nick = 'botijo'
+
+	# check for alternate config file
+	for opt in sys.argv[1:]:
+		if "=" in opt:
+			(key, val) = (opt.split("="))
+			if (key == "--conf"):
+				conf = val
+				# remove opt from sys.argv array
+				sys.argv.remove(opt)
+
+	# overlay config variables with values from config file
+	conf = conf.strip('"')
+	conf = os.path.expanduser(conf)
+	config = ConfigParser.ConfigParser()
+	if os.path.exists(conf):
+		# read config file
+		config.readfp(file(conf))
+		for cname,cvalue in config.items("botijo"):
+			if (cname == "verbose"):
+				verbose = cvalue
+			elif (cname == "home"):
+				home = cvalue
+			elif (cname == "mods"):
+				mods = cvalue
+			elif (cname == "admins"):
+				admins = cvalue
+			elif (cname == "host"):
+				host = cvalue
+			elif (cname == "port"):
+				port = cvalue
+			elif (cname == "channels"):
+				channels = cvalue
+			elif (cname == "nick"):
+				nick = cvalue
+		if (debug >= 1):
+			print "[DEBUG] config file loaded: " + conf
+
+	# overaly config variables with values from command line args
+	for opt in sys.argv[1:]:
+		if opt in ("-v", "--verbose"):
 			verbose = 1
 		elif "=" in opt:
 			(key, val) = (opt.split("="))
-			if (key == "--conf"):
-				config_file = val
-			elif (key == "--host"):
+			if (key == "--host"):
 				host = val
 			elif (key == "--port"):
-				port = int(val)
+				port = val
 			elif (key == "--channels"):
-				channels = val.split(" ")
-			elif (key == "--mods"):
-				channels = val.split(" ")
+				channels = val
 			elif (key == "--nick"):
 				nick = val
 			else:
@@ -246,42 +283,7 @@ if __name__ == "__main__":
 		else:
 			usage()
 
-	# load config
-	config_file = config_file.strip('"')
-	config_file = os.path.expanduser(config_file)
-	config = ConfigParser.ConfigParser()
-
-	if os.path.exists(config_file):
-		# read config file
-		config.readfp(file(config_file))
-		verbose = config.get("botijo", "verbose")
-		debug = config.get("botijo", "debug")
-		home = config.get("botijo", "home")
-		mods = config.get("botijo", "mods")
-		admins = config.get("botijo", "admins")
-		host = config.get("botijo", "host")
-		port = config.get("botijo", "port")
-		channels = config.get("botijo", "channels")
-		nick = config.get("botijo", "nick")
-		if (debug >= 1):
-			print "[DEBUG] config file loaded: " + config_file
-	else:
-		# write config file
-		config_stream = open(config_file, 'r+')
-		config.read_file(config_stream)
-		config.add_section("botijo")
-		config.set("botijo", "verbose", verbose)
-		config.set("botijo", "debug", debug)
-		config.set("botijo", "home", home)
-		config.set("botijo", "mods", mods)
-		config.set("botijo", "admins", admins)
-		config.set("botijo", "host", hosts)
-		config.set("botijo", "port", port)
-		config.set("botijo", "channels", channels)
-		config.set("botijo", "nick", nick)
-		config.add_section("module log")
-		config.write(config_stream)
-
+	# create main object
 	bot = Botijo(config, debug, verbose, home, mods, admins, host, port, channels, nick)
 	bot.main()
 
