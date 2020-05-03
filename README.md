@@ -1,23 +1,23 @@
+# botijo
 
+IRC bot written in Python with modules support
 
-        botijo: IRC bot written in Python with modules support
+## Installation
 
+Build and install
+```
+$ make
+$ sudo make install
+```
 
-REQUERIMENTS
+The command above will place the binary in _/usr/bin_. \
+Alternatively you can also install it as a user in another path (i.e: _/opt/bin_)
+```
+$ sudo make install PREFIX=/opt
+```
 
-  Python (http://www.python.org)
-
-
-BUILD AND INSTALL
-
-  default install:
-  $ sudo make install
-
-  customized installations, for example:
-  $ sudo make install PREFIX=/opt
-
-  the example above will generate this tree:
-
+The example above will generate this tree:
+```
   /opt/
    ├── bin
    │   └── botijo
@@ -27,10 +27,11 @@ BUILD AND INSTALL
            ├── log.pyc
            ├── notes.pyc
            └── sysinfo.pyc
+```
 
+## Usage
 
-USAGE
-
+```
   botijo <options>
 
   Where options are:
@@ -43,13 +44,10 @@ USAGE
   --channels=CHANNELS  List of channels to join (separated by spaces)
   --mods=MODS          List of modules to enable (separated by commans)
   --nick=NICK          Nick name you want to use
+```
 
+## Examples
 
-EXAMPLES
-
-  $ botijo --channels="#testchannel #mychannel" --nick=mybot
-
-
-BUGS AND REPORTS
-
-  Please contact to me: Jose V Beneyto, <sepen@crux.nu>
+```
+$ botijo --channels="#testchannel #mychannel" --nick=mybot
+```
