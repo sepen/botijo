@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "botijo"
+version = "0.0.3"
+description = "IRC bot written in Python with modules support"
+authors = ["Jose Beneyto"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+configparser = "^5.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
