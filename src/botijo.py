@@ -1,12 +1,12 @@
-#!/usr/bin/env python -tt
+#!/usr/bin/env python3 -tt
 #
-# botijo: IRC Bot written in python with modules suppot
+# botijo: IRC Bot written in Python with modules support
 
 import os
 import sys
 import socket
 import string
-import ConfigParser
+import configparser
 
 class Botijo:
 
@@ -40,7 +40,7 @@ class Botijo:
 		self.inChannels = {}
 		for channel in self.channels:
 			if (self.debug >= 1):
-				print "[DEBUG] channel: " + channel
+				print("[DEBUG] channel: " + channel)
 			self.inChannels[channel] = False
 		self.nick = self.nick.strip('"')
 		self.registered = False
@@ -48,18 +48,18 @@ class Botijo:
 	def main(self):
 		
 		if (self.verbose == 1):
-			print "==> Connecting to server " + self.host + " on port " + str(self.port)
+			print("==> Connecting to server " + self.host + " on port " + str(self.port))
 
 		# connect to a server
 		self.readbuffer = ""
-		self.socket = socket.socket( )
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.socket.connect((self.host, self.port))
 
 		# register user
 		if (self.verbose == 1):
-			print "==> Registering nick/user information"
-		self.socket.send("NICK %s\r\n" % self.nick)
-		self.socket.send("USER %s %s * :%s\r\n" % (self.ident, self.host, self.realname))
+			print("==> Registering nick/user information")
+		self.socket.send(bytes("NICK %s\r\n" % self.nick, "UTF-8"))
+		self.socket.send(bytes("USER %s %s * :%s\r\n" % (self.ident, self.host, self.realname), "UTF-8"))
 
 		# some modules require an extra initialization
 		if "log" in self.mods:
@@ -78,43 +78,43 @@ class Botijo:
 			if self.registered:
 				for channel in self.channels:
 					if not self.inChannels[channel]:
-						self.socket.send("JOIN %s\r\n" % channel)
+						self.socket.send(bytes("JOIN %s\r\n" % channel, "UTF-8"))
 
 			# read buffer from server
-			self.readbuffer = self.readbuffer + self.socket.recv(1024)
+			self.readbuffer = self.readbuffer + self.socket.recv(1024).decode("UTF-8")
 			data = self.readbuffer.split("\n")
 			self.readbuffer = data.pop( )
 
 			# process every line
 			for line in data:
 				
-				if (self.debug >= 2): print "[DEBUG] " + line
+				if (self.debug >= 2): print("[DEBUG] " + line)
 
 				# get sanitized string
-				line = string.rstrip(line)
-				line = string.split(line)
+				line = line.rstrip()
+				line = line.split()
 				
 				# server ping pong
 				if (line[0] == "PING"):
-					self.socket.send("PONG %s\r\n" % line[1])
+					self.socket.send(bytes("PONG %s\r\n" % line[1], "UTF-8"))
 
 				# 433 Nickname is already in use
 				elif (line[1] == "433"): # :server.domain 433 * botijo :Nickname is already in use.
 					self.socket.close()
 					if (self.verbose == 1):
-						print "==> Nickname is already in use."
+						print("==> Nickname is already in use.")
 					sys.exit()
 
 				# 376 End of MOTD
 				if line[1] == '376':
 					if (self.verbose == 1):
-						print "==> Successfully registered with nickname: %s." % self.nick
+						print("==> Successfully registered with nickname: %s." % self.nick)
 					self.registered = True
 
 				# 366 End of /NAMES list
 				if line[1] == '366':
 					if (self.verbose == 1):
-						print "==> Successfully joined channel: %s." % line[3]
+						print("==> Successfully joined channel: %s." % line[3])
 					self.inChannels[line[3]] = True
 
 				# private messages
@@ -143,10 +143,10 @@ class Botijo:
 
 					# print some debug messages
 					if (self.debug >= 2):
-						print "[DEBUG] mods: " + " ".join(self.mods)
-						print "[DEBUG] sendto: " + sendto
-						print "[DEBUG] mod: " + mod
-						print "[DEBUG] petition: " + petition
+						print("[DEBUG] mods: " + " ".join(self.mods))
+						print("[DEBUG] sendto: " + sendto)
+						print("[DEBUG] mod: " + mod)
+						print("[DEBUG] petition: " + petition)
 
 					# search and execute the module petition
 					if (len(mod) > 0):
@@ -168,41 +168,41 @@ class Botijo:
 								response = "module '" + mod + "' requires more arguments to be passed"
 
 					#  return the response with a prefix depending on PRIVMSG origin
-					if (sendto is not "") and (response is not ""):
+					if (sendto != "") and (response != ""):
 						if (sendto != nick):
 							response = nick + ": " + response
-						self.socket.send("PRIVMSG %s :%s\r\n" % (sendto, response))
+						self.socket.send(bytes("PRIVMSG %s :%s\r\n" % (sendto, response), "UTF-8"))
 						if (self.verbose == 1):
-							print "==> PRIVMSG " + sendto + " :" + response
+							print("==> PRIVMSG " + sendto + " :" + response)
 
 					# save last line if log module is enabled
 					if "log" in self.mods:
 						if (self.debug >= 1):
-							print "[DEBUG] log.write(" + nick + ", " + msg + ", " + sendto + ")"
+							print("[DEBUG] log.write(" + nick + ", " + msg + ", " + sendto + ")")
 						log.write(nick, msg, sendto)
 
 				# debug not managed command codes from server
 				else:
 					if (self.debug >= 3):
-						print "[DEBUG] NOT MATCHED LINE"
+						print("[DEBUG] NOT MATCHED LINE")
 
 def version():
-	print "botijo 0.2 by Jose V Beneyto, <sepen@crux.nu>"
+	print("botijo 0.0.3")
 	sys.exit()
 
 def usage():
-	print "Usage: botijo <options>"
-	print "Where options are:"
-	print " -h, --help           Show this help information"
-	print " -V, --version        Show version information"
-	print " -v, --verbose        Print verbose messages"
-	print " --conf=CONFIG        Use alternate config file (default: ~/.botijo.conf)"
-	print " --host=SERVER        IRC server to connect"
-	print " --port=PORT          Port number of the server to connect"
-	print " --channels=CHANNELS  List of channels to join (separated by spaces)"
-	print " --nick=NICK          Nick name you want to use"
-	print "Example:"
-	print "  botijo --host=localhost --channels='#test1 #test2' --nick=foo"
+	print("Usage: botijo <options>")
+	print("Where options are:")
+	print(" -h, --help           Show this help information")
+	print(" -V, --version        Show version information")
+	print(" -v, --verbose        Print verbose messages")
+	print(" --conf=CONFIG        Use alternate config file (default: ~/.botijo.conf)")
+	print(" --host=SERVER        IRC server to connect")
+	print(" --port=PORT          Port number of the server to connect")
+	print(" --channels=CHANNELS  List of channels to join (separated by spaces)")
+	print(" --nick=NICK          Nick name you want to use")
+	print("Example:")
+	print("  botijo --host=localhost --channels='#test1 #test2' --nick=foo")
 	sys.exit()
 
 
@@ -240,10 +240,10 @@ if __name__ == "__main__":
 	# overlay config variables with values from config file
 	conf = conf.strip('"')
 	conf = os.path.expanduser(conf)
-	config = ConfigParser.ConfigParser()
+	config = configparser.ConfigParser()
 	if os.path.exists(conf):
 		# read config file
-		config.readfp(file(conf))
+		config.readfp(open(conf))
 		for cname,cvalue in config.items("botijo"):
 			if (cname == "verbose"):
 				verbose = cvalue
@@ -262,7 +262,7 @@ if __name__ == "__main__":
 			elif (cname == "nick"):
 				nick = cvalue
 		if (debug >= 1):
-			print "[DEBUG] config file loaded: " + conf
+			print("[DEBUG] config file loaded: " + conf)
 
 	# overaly config variables with values from command line args
 	for opt in sys.argv[1:]:

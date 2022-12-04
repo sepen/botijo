@@ -1,7 +1,7 @@
 #!/bin/sh
 
-PYTHON=/usr/bin/python
-LIBDIR=/usr/lib/botijo
+PYTHON="$(/usr/bin/env python3)"
+LIBDIR="/usr/lib/botijo"
 
 cd $LIBDIR
 $PYTHON botijo.pyc "$@"

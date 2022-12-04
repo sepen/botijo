@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 
@@ -18,6 +18,7 @@ class Sysinfo:
 		elif (cmd == "uname"):
 			return " ".join(os.uname())
 
+		# TODO: it crashes on Darwin (macOS)
 		elif (cmd == "free"):
 			# mem
 			pipe_mem = os.popen('{ free -tom | grep ^Mem; } 2>&1', 'r')

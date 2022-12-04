@@ -2,12 +2,11 @@
 # Makefile
 #
 
-PYTHON=/usr/bin/python
+PYTHON = /usr/bin/env python3
 
-DESTDIR=
-
-PREFIX=/usr
-LIBDIR=$(PREFIX)/lib/botijo
+DESTDIR =
+PREFIX = /usr
+LIBDIR = $(PREFIX)/lib/botijo
 
 .PHONY: clean botijo install
 

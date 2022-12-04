@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, datetime
-import ConfigParser
+import configparser
 
 class Log:
 
@@ -44,7 +44,7 @@ class Log:
 		f.close()
 
 	def write_sqlite (self, date, time, nick, message, channel):
-		print channel + " - " + date + " [" + nick + "] " + message
+		print(channel + " - " + date + " [" + nick + "] " + message)
 		with self.bbddconn:
 			cur = self.bbddconn.cursor()
 			cur.execute("CREATE TABLE IF NOT EXISTS '" + channel + "' (date TEXT, time TEXT, nick TEXT, message TEXT)")
